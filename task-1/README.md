@@ -104,6 +104,8 @@ ssh -f -N -L 2222:10.156.0.4:2222 vulnuser@34.107.68.144
 nmap -p2222 --script ssh-brute --script-args userdb=user.lst,passdb=pass.lst localhost
 ```
 
+Note: The SSH tunnel is just for demo purposes, sophisticated attackers will tunnel the whole network or run less invasive enumeration scripts/tools rather than Nmap.
+
 ### Defender
 
 In Elastic, we received a ton of logs from the honeypot indicating an SSH bruteforce:
@@ -119,3 +121,14 @@ Following the unsuccessful SSH attempts, there was a successful login indicating
 ![Successful bruteforce - attacker's ip](assets/attacker-ip.png)
 
 The attacker with ip `34.32.76.62` bruteforced user `vulnuser` and attempted lateral movement.
+
+
+## Nice to haves
+
+With the task being basic and having a time constraint, some implementations are for Proof of Concept purposes and not meant for production. In production, I would:
+* Use a properly secured PKI for certs or letsencrypt with a domain instead of self-signed CA
+* Restrict Kibana to internal network and assign domain
+* Store Terraform state in the cloud
+* Store Terraform deployment output in cloud or elsewhere and source it dynamically from Ansible to increase automation
+* Bind internal services to an internal IP as a secondary control instead of relying only on Google Cloud Firewall
+* 
