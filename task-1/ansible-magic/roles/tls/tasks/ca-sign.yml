@@ -1,0 +1,22 @@
+- name: Copy CSR 
+  copy:
+    src: "/tmp/{{ rsyslog_host }}-request.pem"
+    dest: "/tmp/{{ rsyslog_host }}-request.pem"
+
+- name: Transfer cert template
+  copy:
+    src: "/tmp/{{ rsyslog_host }}-cert.tmpl"
+    dest: "/tmp/{{ rsyslog_host }}-cert.tmpl"
+
+- name: CA Sign
+  command: >
+    certtool --generate-certificate --load-request "/tmp/{{ rsyslog_host }}-request.pem" --outfile "/tmp/{{ rsyslog_host }}-request.pem.signed"
+    --load-ca-certificate {{ ca_cert_loc }} --load-ca-privkey {{ ca_privkey_loc }} --template "/tmp/{{ rsyslog_host }}-cert.tmpl"
+  args: 
+    creates: "/tmp/{{ rsyslog_host }}-request.pem.signed"
+
+- name: Fetch the signed server cert
+  fetch:
+    src: "/tmp/{{ rsyslog_host }}-request.pem.signed"
+    dest: "/tmp/{{ rsyslog_host }}.pem"
+    flat: yes

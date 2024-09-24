@@ -1,0 +1,4 @@
+- name: Change TLS key permissions
+  file:
+    path: "{{ rsyslog_tls_key_path }}"
+    mode: '0644'

@@ -1,0 +1,19 @@
+- name: Install Rsyslog GnuTLS
+  apt:
+    name: rsyslog-gnutls
+    state: present
+    update_cache: yes
+
+- name: Setup Rsyslog Server
+  template:
+    src: server.conf.j2
+    dest: /etc/rsyslog.d/server.conf
+  notify: Restart Rsyslog Daemon
+  when: rsyslog_role == "collector"
+
+- name: Setup Rsyslog Client
+  template:
+    src: client.conf.j2
+    dest: /etc/rsyslog.d/client.conf
+  notify: Restart Rsyslog Daemon
+  when: rsyslog_role == "generator"

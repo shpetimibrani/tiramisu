@@ -1,0 +1,31 @@
+- name: Generate CA private key
+  command: certtool --generate-privkey --outfile {{ ca_privkey_loc }}
+  args:
+    creates: "{{ ca_privkey_loc }}"
+
+- name: Check if CA cert exists
+  stat:
+    path: "{{ ca_cert_loc }}"
+  register: ca_cert
+
+- block:
+
+  - name: Transfer CA template
+    template:
+      src: CA.tmpl
+      dest: /tmp/ca.tmpl
+    register: temp_ca_template
+
+  - name: Generate self-signed certificate
+    command: >
+      certtool --generate-self-signed --load-privkey {{ ca_privkey_loc }}
+      --outfile {{ ca_cert_loc }} --template {{ temp_ca_template.dest }}
+
+  when: not ca_cert.stat.exists
+
+
+- name: Fetch CA certificate from server
+  fetch:
+    src: "{{ ca_cert_loc }}"
+    dest: "{{ fetched_ca_cert_path }}"
+    flat: yes

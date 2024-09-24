@@ -1,0 +1,30 @@
+all:
+  hosts:
+    instance-siem:
+      ansible_host: 34.107.97.216
+      rsyslog_role: collector
+    instance-client:
+      ansible_host: 34.107.68.144
+      rsyslog_role: generator
+    instance-client2:
+      ansible_host: 34.89.197.51
+      rsyslog_role: generator
+
+  children:
+    rsyslog:
+      hosts:
+        instance-siem:
+        instance-client:
+        instance-client2:
+
+    ca:
+      hosts:
+        instance-siem:
+
+    honeypot:
+      hosts:
+        instance-client2:
+
+    siem:
+      hosts:
+        instance-siem:

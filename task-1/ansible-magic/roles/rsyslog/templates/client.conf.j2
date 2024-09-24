@@ -1,0 +1,20 @@
+# setup
+global(
+DefaultNetstreamDriver="gtls"
+DefaultNetstreamDriverCAFile="{{ ca_cert_loc }}"
+DefaultNetstreamDriverCertFile="{{ rsyslog_tls_cert_path }}"
+DefaultNetstreamDriverKeyFile="{{ rsyslog_tls_key_path }}"
+)
+
+
+# set up the action for all messages
+action(
+type="omfwd"
+protocol="tcp"
+target="{{ rsyslog_server }}"
+port="6514"
+StreamDriver="gtls"
+StreamDriverMode="1"
+StreamDriverAuthMode="x509/name"
+StreamDriverPermittedPeers="{{ rsyslog_server }}"
+)

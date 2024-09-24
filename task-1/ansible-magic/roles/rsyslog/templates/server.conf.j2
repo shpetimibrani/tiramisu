@@ -1,0 +1,22 @@
+# make gtls driver the default and set certificate files
+global(
+DefaultNetstreamDriver="gtls"
+DefaultNetstreamDriverCAFile="{{ ca_cert_loc }}"
+DefaultNetstreamDriverCertFile="{{ rsyslog_tls_cert_path }}"
+DefaultNetstreamDriverKeyFile="{{ rsyslog_tls_key_path }}"
+)
+
+# load TCP listener
+module(
+load="imtcp"
+StreamDriver.Name="gtls"
+StreamDriver.Mode="1"
+StreamDriver.AuthMode="x509/name"
+PermittedPeer=[{{ rsyslog_clients | join('", "') | regex_replace('^|$', "\"") }}]
+)
+
+# start up listener at port 6514
+input(
+type="imtcp"
+port="6514"
+)

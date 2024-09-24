@@ -1,0 +1,101 @@
+- name: Add APT signing key for Elasticsearch
+  ansible.builtin.apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add Elasticsearch & Kibana source repository into sources list
+  ansible.builtin.apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+
+- name: Add Rsyslog Repo
+  ansible.builtin.apt_repository:
+    repo: ppa:adiscon/v8-stable
+
+- name: Install Elastic and other packages
+  apt:
+    pkg:
+    - elasticsearch
+    - kibana
+    - nginx
+    - rsyslog-elasticsearch
+    - python3-passlib
+    update_cache: yes
+
+- name: Enable Elastic & Kibana service
+  systemd_service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+    masked: no
+  loop:
+    - elasticsearch
+    - kibana
+
+- name: Forward Rsyslog logs to Elastic
+  template:
+    src: rsyslog-elastic.conf
+    dest: /etc/rsyslog.d/elastic.conf
+  notify:
+    - Restart Rsyslog
+
+- name: Set nginx basic auth credentials
+  htpasswd:
+    path: /etc/nginx/htpasswd.users
+    name: admin
+    password: "{{ kibana_password }}"
+
+- name: Create nginx ssl directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0755'
+
+- name: Generate a self-signed SSL certificate
+  command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048
+    -keyout /etc/nginx/ssl/selfsigned.key
+    -out /etc/nginx/ssl/selfsigned.crt
+    -subj "/C=EE/CN=_"
+  args:
+    creates: /etc/nginx/ssl/selfsigned.crt
+
+- name: Copy nginx template
+  template:
+    src: nginx-kibana.j2
+    dest: /etc/nginx/sites-available/kibana
+
+- name: Enable nginx reverse proxy for kibana
+  file:
+    src: /etc/nginx/sites-available/kibana
+    dest: /etc/nginx/sites-enabled/kibana
+    state: link
+  notify:
+    - Reload Nginx
+
+- name: Wait until Kibana API is ready
+  uri:
+    url: "http://localhost:5601/api/status"
+    method: GET
+    return_content: yes
+    status_code: 200
+  register: kibana_status
+  until: kibana_status.status == 200
+  retries: 10
+  delay: 10
+
+- name: Check if syslog* index pattern exists
+  command: >
+    curl -s -X GET "http://localhost:5601/api/saved_objects/_find?type=index-pattern" -H "kbn-xsrf: true"
+  register: index_patterns_response
+
+- set_fact:
+    index_pattern_exists: "{{ (index_patterns_response.stdout | from_json).saved_objects | selectattr('attributes.title', 'equalto', 'syslog*') | list | length > 0 }}"
+
+- name: Create syslog* index pattern
+  command: >
+    curl -s -X POST "http://localhost:5601/api/saved_objects/index-pattern"
+    -H "kbn-xsrf: true"
+    -H "Content-Type: application/json"
+    --data-binary '{ "attributes": { "title": "syslog*", "timeFieldName": "@timestamp" } }'
+  when: not index_pattern_exists

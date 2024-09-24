@@ -1,0 +1,9 @@
+rsyslog_server: "instance-siem.tiramisu.int"
+rsyslog_clients:
+  - instance-client.tiramisu.int
+  - instance-client2.tiramisu.int
+
+
+rsyslog_tls_key_path: "/etc/rsyslog.d/keys/server-key.pem"
+rsyslog_tls_cert_path: "/etc/rsyslog.d/keys/server-cert.pem"
+

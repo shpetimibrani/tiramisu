@@ -1,0 +1,46 @@
+- name: Create keys directory
+  file:
+    path: /etc/rsyslog.d/keys
+    state: directory
+
+- name: Generate machine private key
+  command: certtool --generate-privkey --outfile {{ rsyslog_tls_key_path }}
+  args:
+    creates: "{{ rsyslog_tls_key_path }}"
+  notify: Change TLS key permissions
+
+- name: Distribute CA cert
+  copy:
+    src: "{{ fetched_ca_cert_path }}"
+    dest: "{{ ca_cert_loc }}"
+
+- name: Check if server cert exists
+  stat:
+    path: "{{ rsyslog_tls_cert_path }}"
+  register: server_cert
+
+- block:
+
+  - name: Copy certificate template
+    template:
+      src: machine-cert.tmpl.j2
+      dest: /tmp/cert.tmpl
+
+  - name: Generate certificate sign request
+    command: >
+      certtool --generate-request --load-privkey {{ rsyslog_tls_key_path }} 
+      --outfile /tmp/request.pem --template /tmp/cert.tmpl
+
+  - name: Fetch the generated certificate request from server
+    fetch:
+      src: /tmp/request.pem
+      dest: "/tmp/{{ inventory_hostname }}-request.pem"
+      flat: yes
+
+  - name: Fetch the certificate template
+    fetch:
+      src: /tmp/cert.tmpl
+      dest: "/tmp/{{ inventory_hostname }}-cert.tmpl"
+      flat: yes
+
+  when: not server_cert.stat.exists

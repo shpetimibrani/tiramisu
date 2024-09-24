@@ -1,0 +1,4 @@
+- name: Restart Rsyslog Daemon
+  service:
+    name: rsyslog
+    state: restarted

@@ -1,0 +1,36 @@
+---
+- name: Setup CA & TLS certs
+  become: yes
+  hosts: ca,rsyslog
+  roles:
+    - tls
+
+- name: Setup & Configure Rsyslog
+  become: yes
+  hosts: rsyslog
+  roles:
+    - rsyslog
+
+- name: Setup & Configure Elastic
+  become: yes
+  hosts: siem
+  vars_files:
+    - secrets.yml #Vault
+  roles:
+    - elastic
+
+- name: Setup Opencanary Honeypot
+  become: yes
+  hosts: honeypot
+  roles:
+    - role: ansible-role-opencanary
+      vars:
+        opencanary_version: master
+        install_source: github
+        portscan_enabled: "true"
+        ssh_enabled: "true"
+        ssh_port: 2222
+        ftp_enabled: "true"
+        telnet_enabled: "true"
+        rdp_enabled: "true"
+        http_enabled: "true"

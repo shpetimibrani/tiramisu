@@ -1,0 +1,5 @@
+internal_domain: "tiramisu.int"
+internal_vm_hostname: "{{ ansible_hostname }}.{{ internal_domain }}"
+ca_cert_loc: "/etc/ssl/certs/ca.pem"
+ca_privkey_loc: "/etc/ssl/private/ca-key.pem"
+fetched_ca_cert_path: "/tmp/fetched_files/ca.pem"

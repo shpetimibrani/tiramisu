@@ -1,0 +1,20 @@
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+# === Remove cloudinit rsyslog config files ===
+# 
+- find:
+    paths: /etc/rsyslog.d/
+    file_type: file
+    patterns: '*'
+  register: found_files
+
+- name: Remove existing Rsyslog config
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ found_files.files }}"
+  when: item.path != '/etc/rsyslog.d/50-default.conf'
+  become: yes
+# === Remove cloudinit rsyslog config files ===

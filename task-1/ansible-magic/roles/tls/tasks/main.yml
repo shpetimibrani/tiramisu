@@ -1,0 +1,30 @@
+- name: Install GnuTLS (certtool)
+  apt:
+    name: gnutls-bin
+    state: present
+    update_cache: yes
+
+- name: Setup CA
+  include_tasks: ca.yml
+  when: "'ca' in group_names"
+
+- name: Generate rsyslog tls keys & certificate requests
+  include_tasks: rsyslog-tls.yml
+  when: "'rsyslog' in group_names"
+
+- name: CA - Sign certificate requests
+  include_tasks: ca-sign.yml
+  loop: "{{ groups['rsyslog'] }}"
+  loop_control:
+    loop_var: rsyslog_host
+  when: 
+    - "'ca' in group_names"
+    - not server_cert.stat.exists
+
+- name: Distribute signed certificate
+  copy:
+    src: "/tmp/{{ inventory_hostname }}.pem"
+    dest: "{{ rsyslog_tls_cert_path }}"
+  when: 
+    - "'rsyslog' in group_names"
+    - not server_cert.stat.exists
