@@ -131,4 +131,3 @@ With the task being basic and having a time constraint, some implementations are
 * Store Terraform state in the cloud
 * Store Terraform deployment output in cloud or elsewhere and source it dynamically from Ansible to increase automation
 * Bind internal services to an internal IP as a secondary control instead of relying only on Google Cloud Firewall
-* 
